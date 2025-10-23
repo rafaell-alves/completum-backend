@@ -1,4 +1,4 @@
-# 🎮 COMPLETUM
+# 🎮 COMPLETUM - Em Desenvolvimento
 ### Sistema de Guias e Plataforma Comunitária para Jogadores
 
 [![Node.js](https://img.shields.io/badge/Node.js-22.x-green)](https://nodejs.org/)
