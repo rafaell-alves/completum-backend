@@ -1,0 +1,214 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int                 @id @unique @default(autoincrement())
+  uuid              String              @unique @default(uuid())
+  email             String              @unique
+  name              String?
+  nickname          String
+  birthday          String
+  password          String
+  password_salt     String?
+  picture           String?
+  Build             Build[]
+  Post              Post[]
+  Commentary        Commentary[]
+  CommentaryLike    CommentaryLike[]
+  PostLike          PostLike[]
+  FavoriteCharacter FavoriteCharacter[]
+  FavoriteBuild     FavoriteBuild[]
+  created_at        DateTime            @default(now())
+  update_at         DateTime            @updatedAt
+}
+
+model Character {
+  id                Int                 @id @default(autoincrement())
+  uuid              String              @unique @default(uuid())
+  name              String              @unique
+  lore              String?             @db.Text
+  gallery           Json?
+  builds            Build[]
+  FavoriteCharacter FavoriteCharacter[]
+  created_at        DateTime            @default(now())
+  update_at         DateTime            @updatedAt
+  deleted_at        DateTime?
+}
+
+model Build {
+  id   Int    @id @unique @default(autoincrement())
+  uuid String @unique @default(uuid())
+
+  name         String
+  description  String?    @db.Text
+  character_id Int
+  character    Character @relation(fields: [character_id], references: [id])
+  user_id      Int
+  user         User      @relation(fields: [user_id], references: [id])
+
+  // Relações muitos-para-muitos com Item
+  items Item[] @relation("WeaponsBuild")
+
+  runes Json?
+
+  FavoriteBuild FavoriteBuild[]
+
+  created_at      DateTime          @default(now())
+  update_at       DateTime          @updatedAt
+  deleted_at      DateTime?
+  BuildItemWeapon BuildItemWeapon[]
+}
+
+// model Team {
+//   id         Int         @id @default(autoincrement())
+//   uuid       String      @default(uuid())
+//   characters Character[] @relation("TeamCharacters") // Relacionamento com Character
+//   like       Int?
+//   dislike    Int?
+//   user       User        @relation(fields: [user_uuid], references: [uuid])
+//   user_uuid  String
+
+//   created_at DateTime @default(now())
+//   update_at DateTime @updatedAt
+// }
+
+model Item {
+  id          Int     @id @default(autoincrement())
+  uuid        String  @default(uuid())
+  name        String
+  description String  @db.Text
+  photo       String?
+
+  builds_as_weapon Build[] @relation("WeaponsBuild")
+
+  created_at      DateTime          @default(now())
+  update_at       DateTime          @updatedAt
+  deleted_at      DateTime?
+  BuildItemWeapon BuildItemWeapon[]
+}
+
+model BuildItemWeapon {
+  build_id Int
+  item_id  Int
+  build    Build @relation(fields: [build_id], references: [id], onDelete: Cascade)
+  item     Item  @relation(fields: [item_id], references: [id], onDelete: Cascade)
+
+  @@id([build_id, item_id])
+}
+
+model Monsters {
+  id          Int       @id @default(autoincrement())
+  uuid        String    @default(uuid())
+  name        String
+  description String?   @db.Text
+  weakness    Json?
+  ailments    Json?
+  resistances Json?
+  elements    Json?
+  gallery     Json?
+  created_at  DateTime  @default(now())
+  update_at   DateTime? @updatedAt
+  deleted_at  DateTime?
+}
+
+model Post {
+  id   Int    @id @unique @default(autoincrement())
+  uuid String @unique @default(uuid())
+
+  user         User         @relation(fields: [user_id], references: [id])
+  user_id      Int
+  topic        String
+  content      String
+  picture      Json?
+  Commentaries Commentary[]
+
+  post_like PostLike[]
+
+  created_at DateTime  @default(now())
+  update_at  DateTime  @updatedAt
+  deleted_at DateTime?
+}
+
+model Commentary {
+  id   Int    @id @default(autoincrement())
+  uuid String @unique @default(uuid())
+
+  post            Post             @relation(fields: [post_id], references: [id])
+  post_id         Int
+  user            User             @relation(fields: [user_id], references: [id])
+  commentary_uuid String           @unique @default(uuid())
+  user_id         Int
+  content         String           @db.Text
+  picture         Json?
+  like            Int?
+  commentary_like CommentaryLike[]
+  created_at      DateTime         @default(now())
+  update_at       DateTime         @updatedAt
+  deleted_at      DateTime?
+}
+
+model CommentaryLike {
+  id   Int    @id @default(autoincrement())
+  uuid String @unique @default(uuid())
+
+  commentary    Commentary @relation(fields: [commentary_id], references: [id])
+  commentary_id Int
+  user          User       @relation(fields: [user_id], references: [id])
+  user_id       Int
+
+  created_at DateTime @default(now())
+  update_at  DateTime @updatedAt
+}
+
+model PostLike {
+  id   Int    @id @default(autoincrement())
+  uuid String @unique @default(uuid())
+
+  post    Post @relation(fields: [post_id], references: [id])
+  post_id Int
+  user    User @relation(fields: [user_id], references: [id])
+  user_id Int
+
+  created_at DateTime @default(now())
+  update_at  DateTime @updatedAt
+}
+
+model FavoriteCharacter {
+  id   Int    @id @default(autoincrement())
+  uuid String @unique @default(uuid())
+
+  user         User      @relation(fields: [user_id], references: [id])
+  user_id      Int
+  character    Character @relation(fields: [character_id], references: [id])
+  character_id Int
+
+  created_at DateTime @default(now())
+  update_at  DateTime @updatedAt
+
+   @@unique([user_id, character_id])
+}
+
+model FavoriteBuild {
+  id   Int    @id @default(autoincrement())
+  uuid String @unique @default(uuid())
+
+  user     User  @relation(fields: [user_id], references: [id])
+  user_id  Int
+  build    Build @relation(fields: [build_id], references: [id])
+  build_id Int
+
+  created_at DateTime @default(now())
+  update_at  DateTime @updatedAt
+}

@@ -1,0 +1,62 @@
+services:
+  api:
+    volumes:
+      - .:/app
+      - /app/node_modules 
+    container_name: ${APP_NAME}-node
+    restart: unless-stopped
+    build:
+        context: ./
+        dockerfile: ./Docker/node/Dockerfile
+    ports:
+        
+        - "3000:3001"
+    networks:
+      - mysql_net
+      - rabbitmq_net
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - db
+      - rabbitmq
+
+  db:
+    container_name: ${APP_NAME}-mysql
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_volume:/var/lib/mysql
+    ports:
+      - ${DB_PORT}:3306
+    networks:
+      - mysql_net
+    restart: unless-stopped
+
+  rabbitmq:
+    container_name: ${APP_NAME}-rabbitmq
+    image: rabbitmq:3-management
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - ${RABBITMQ_PORT}:5672
+      - ${RABBITMQ_MANAGEMENT_PORT}:15672
+    networks:
+      - rabbitmq_net
+    restart: unless-stopped
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-admin}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-admin}
+
+volumes:
+  mysql_volume:
+  rabbitmq_data:
+
+networks:
+  mysql_net:
+    driver: bridge
+  rabbitmq_net:
+    driver: bridge
